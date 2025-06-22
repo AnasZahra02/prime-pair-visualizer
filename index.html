@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Pair Grapher</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 1200px; /* Increased max-width to accommodate two graphs */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        .graph-container {
+            display: flex;
+            flex-wrap: wrap; /* Allows wrapping on smaller screens */
+            justify-content: center;
+            gap: 20px; /* Space between the two graph wrappers */
+            width: 100%;
+        }
+        .canvas-wrapper {
+            flex: 1; /* Allow wrappers to grow and shrink */
+            min-width: 300px; /* Minimum width before wrapping */
+            max-width: 49%; /* Max width to ensure two fit side-by-side */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            border: 2px solid #cbd5e1;
+            background-color: #ffffff;
+            border-radius: 8px;
+            width: 100%; /* Make canvas fluid within its wrapper */
+            height: 500px; /* Fixed height for consistency */
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+        }
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            width: 100%;
+        }
+        .input-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex-grow: 1;
+            min-width: 150px;
+        }
+        .input-item label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #334155;
+            font-size: 0.9em;
+        }
+        .input-item input {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1em;
+            width: 100%;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .input-item input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            width: 100%;
+        }
+        .button {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border: none;
+        }
+        .button-primary {
+            background: linear-gradient(145deg, #4f46e5, #3b82f6);
+            color: #ffffff;
+            transform: translateY(0);
+        }
+        .button-primary:hover {
+            background: linear-gradient(145deg, #3b82f6, #4f46e5);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
+        .button-secondary {
+            background-color: #e2e8f0;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            transform: translateY(0);
+        }
+        .button-secondary:hover {
+            background-color: #cbd5e1;
+            color: #1e293b;
+            box-shadow: 0 6px 12px rgba(100, 116, 139, 0.2);
+            transform: translateY(-2px);
+        }
+        .message-box {
+            background-color: #fef3c7;
+            color: #d97706;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #fcd34d;
+            margin-top: 15px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.95em;
+            display: none; /* Hidden by default */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Prime Pair Grapher</h1>
+        <div class="input-group">
+            <div class="input-item">
+                <label for="maxX">Max X Value:</label>
+                <input type="number" id="maxX" value="100" min="2">
+            </div>
+            <div class="input-item">
+                <label for="maxY">Max Y Value:</label>
+                <input type="number" id="maxY" value="100" min="2">
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="drawGraphBtn" class="button button-primary">Draw Graphs</button>
+            <button id="clearGraphBtn" class="button button-secondary">Clear Graphs</button>
+        </div>
+        <div id="messageBox" class="message-box"></div>
+
+        <div class="graph-container">
+            <div class="canvas-wrapper">
+                <h2 class="text-xl font-semibold text-gray-700 text-center mb-2">Original (i, j) Graph</h2>
+                <canvas id="primeGraphCanvas"></canvas>
+            </div>
+            <div class="canvas-wrapper">
+                <h2 class="text-xl font-semibold text-gray-700 text-center mb-2">Transformed (f, g) Graph</h2>
+                <canvas id="rotatedGraphCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const primeGraphCanvas = document.getElementById('primeGraphCanvas');
+        const primeGraphCtx = primeGraphCanvas.getContext('2d');
+        const rotatedGraphCanvas = document.getElementById('rotatedGraphCanvas');
+        const rotatedGraphCtx = rotatedGraphCanvas.getContext('2d');
+
+        const maxXInput = document.getElementById('maxX');
+        const maxYInput = document.getElementById('maxY');
+        const drawGraphBtn = document.getElementById('drawGraphBtn');
+        const clearGraphBtn = document.getElementById('clearGraphBtn');
+        const messageBox = document.getElementById('messageBox');
+
+        let currentMaxX = 0;
+        let currentMaxY = 0;
+        let primesX = [];
+        let primesY = [];
+        let uniqueTransformedUs = [];
+        let uniqueTransformedVs = [];
+
+        // Function to display messages in the message box
+        function showMessage(message, type = 'info') {
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            if (type === 'error') {
+                messageBox.style.backgroundColor = '#fee2e2';
+                messageBox.style.borderColor = '#ef4444';
+                messageBox.style.color = '#dc2626';
+            } else { // 'info' or default
+                messageBox.style.backgroundColor = '#fef3c7';
+                messageBox.style.borderColor = '#fcd34d';
+                messageBox.style.color = '#d97706';
+            }
+        }
+
+        // Function to hide the message box
+        function hideMessage() {
+            messageBox.style.display = 'none';
+        }
+
+        // --- Prime Number Generation ---
+        // Basic primality test (optimized for numbers up to ~1000-2000)
+        function isPrime(num) {
+            if (num <= 1) return false;
+            if (num <= 3) return true;
+            if (num % 2 === 0 || num % 3 === 0) return false;
+            for (let i = 5; i * i <= num; i = i + 6) {
+                if (num % i === 0 || num % (i + 2) === 0) return false;
+            }
+            return true;
+        }
+
+        // Generates primes up to a given limit using trial division
+        function generatePrimesUpTo(limit) {
+            const primes = [];
+            for (let i = 2; i <= limit; i++) {
+                if (isPrime(i)) {
+                    primes.push(i);
+                }
+            }
+            return primes;
+        }
+
+        // --- Canvas Drawing Utilities ---
+
+        // Sets the internal drawing size and display size for a canvas
+        function setCanvasSize(canvasElement) {
+            const wrapper = canvasElement.parentElement;
+            // Set canvas drawing buffer size (for high resolution)
+            canvasElement.width = wrapper.clientWidth;
+            canvasElement.height = 500; // Fixed height
+            // Set canvas display size (for responsiveness)
+            canvasElement.style.width = '100%';
+            canvasElement.style.height = '500px';
+        }
+
+        // Clears a specific canvas
+        function clearSpecificCanvas(ctx, canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Generalized function to draw axes on a canvas
+        // xLabels and yLabels are arrays of specific values to label
+        function drawAxes(ctx, canvas, minXVal, maxXVal, minYVal, maxYVal, xLabelText, yLabelText, xLabels, yLabels, useSqrt2Unit = false) {
+            clearSpecificCanvas(ctx, canvas);
+            const padding = 40;
+            const graphWidth = canvas.width - 2 * padding;
+            const graphHeight = canvas.height - 2 * padding;
+
+            // Calculate scaling factors
+            const scaleX = graphWidth / (maxXVal - minXVal);
+            const scaleY = graphHeight / (maxYVal - minYVal);
+
+            // Calculate canvas position of origin (0,0) relative to current graph range
+            const originXCanvas = padding + (0 - minXVal) * scaleX;
+            const originYCanvas = canvas.height - padding - (0 - minYVal) * scaleY;
+
+            // Determine X-axis Y-position (if 0 is within Y-range, use originY, else bottom/top)
+            const xAxisY = (minYVal <= 0 && maxYVal >= 0) ? originYCanvas : canvas.height - padding;
+            // Determine Y-axis X-position (if 0 is within X-range, use originX, else left/right)
+            const yAxisX = (minXVal <= 0 && maxXVal >= 0) ? originXCanvas : padding;
+
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+
+            // Draw X-axis line
+            ctx.beginPath();
+            ctx.moveTo(padding, xAxisY);
+            ctx.lineTo(canvas.width - padding, xAxisY);
+            ctx.stroke();
+
+            // Draw Y-axis line
+            ctx.beginPath();
+            ctx.moveTo(yAxisX, padding);
+            ctx.lineTo(yAxisX, canvas.height - padding);
+            ctx.stroke();
+
+            // Draw X-axis labels and ticks
+            ctx.font = '12px Inter, sans-serif';
+            ctx.fillStyle = '#475569';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+
+            let lastXLabelPos = -Infinity; // Keep track of last drawn label position to avoid overlap
+            const minLabelSpacingX = 40; // Minimum pixel spacing between labels
+            xLabels.forEach(value => {
+                const xPos = padding + (value - minXVal) * scaleX;
+                if (xPos - lastXLabelPos > minLabelSpacingX) {
+                    let labelText = value;
+                    if (useSqrt2Unit) {
+                        labelText = `${(Math.round(value * 100) / 100)}√2`;
+                    }
+                    ctx.fillText(labelText, xPos, xAxisY + 10);
+                    lastXLabelPos = xPos;
+                }
+                // Draw tick marks
+                ctx.beginPath();
+                ctx.moveTo(xPos, xAxisY);
+                ctx.lineTo(xPos, xAxisY - 5);
+                ctx.stroke();
+            });
+            ctx.fillText(xLabelText, canvas.width / 2, xAxisY + 30);
+
+            // Draw Y-axis labels and ticks
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+
+            let lastYLabelPos = Infinity; // Keep track of last drawn label position
+            const minLabelSpacingY = 25; // Minimum pixel spacing between labels
+            yLabels.forEach(value => {
+                const yPos = canvas.height - padding - (value - minYVal) * scaleY;
+                if (lastYLabelPos - yPos > minLabelSpacingY) {
+                    let labelText = value;
+                    if (useSqrt2Unit) {
+                        labelText = `${(Math.round(value * 100) / 100)}√2`;
+                    }
+                    ctx.fillText(labelText, yAxisX - 10, yPos);
+                    lastYLabelPos = yPos;
+                }
+                // Draw tick marks
+                ctx.beginPath();
+                ctx.moveTo(yAxisX, yPos);
+                ctx.lineTo(yAxisX + 5, yPos);
+                ctx.stroke();
+            });
+            ctx.save();
+            ctx.translate(yAxisX - 30, canvas.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.fillText(yLabelText, 0, 0);
+            ctx.restore();
+        }
+
+        function drawGraphs() {
+            clearSpecificCanvas(primeGraphCtx, primeGraphCanvas);
+            clearSpecificCanvas(rotatedGraphCtx, rotatedGraphCanvas);
+            hideMessage();
+
+            const maxX = parseInt(maxXInput.value);
+            const maxY = parseInt(maxYInput.value);
+
+            if (isNaN(maxX) || isNaN(maxY) || maxX < 2 || maxY < 2) {
+                showMessage('Please enter valid maximum X and Y values (numbers greater than 1).', 'error');
+                return;
+            }
+
+            showMessage('Generating primes and drawing graphs...', 'info');
+
+            currentMaxX = maxX;
+            currentMaxY = maxY;
+
+            // Generate primes for X and Y axes
+            primesX = generatePrimesUpTo(maxX);
+            primesY = generatePrimesUpTo(maxY);
+
+            if (primesX.length === 0 || primesY.length === 0) {
+                 showMessage('No prime numbers found within the specified range. Try increasing the max values.', 'error');
+                 return;
+            }
+
+            const padding = 40;
+            const primeGraphWidth = primeGraphCanvas.width - 2 * padding;
+            const primeGraphHeight = primeGraphCanvas.height - 2 * padding;
+
+            // --- Draw Original (i, j) Graph ---
+            // Use primesX and primesY directly as labels
+            drawAxes(primeGraphCtx, primeGraphCanvas, 0, maxX, 0, maxY, 'X (Prime Number)', 'Y (Prime Number)', primesX, primesY, false);
+
+            primeGraphCtx.fillStyle = '#6366f1'; // Point color for original graph
+            const pointRadius = 3;
+
+            let originalPointsDrawn = 0;
+            for (const px of primesX) {
+                for (const py of primesY) {
+                    const canvasX = padding + (px / maxX) * primeGraphWidth;
+                    const canvasY = primeGraphCanvas.height - padding - (py / maxY) * primeGraphHeight;
+
+                    primeGraphCtx.beginPath();
+                    primeGraphCtx.arc(canvasX, canvasY, pointRadius, 0, Math.PI * 2);
+                    primeGraphCtx.fill();
+                    originalPointsDrawn++;
+                }
+            }
+
+            // --- Prepare for Transformed (f, g) Graph ---
+            const minPrimeVal = 2; // Smallest prime number
+
+            // Calculate min/max for the U and V coordinates
+            // U = (x - y) / sqrt(2) -> for axis labeling, use U_normalized = (x-y)/2 for simpler scaling
+            // V = (x + y) / sqrt(2) -> for axis labeling, use V_normalized = (x+y)/2 for simpler scaling
+            // The labels will then be `value * sqrt(2)`
+            
+            // To get accurate min/max U and V, consider extreme prime pairs:
+            // max U: (maxPx - minPy) / 2
+            // min U: (minPx - maxPy) / 2
+            // max V: (maxPx + maxPy) / 2
+            // min V: (minPx + minPy) / 2 (which is always (2+2)/2 = 2 if primes start from 2)
+            
+            const uniqueUsSet = new Set();
+            const uniqueVsSet = new Set();
+
+            let minCalculatedU = Infinity;
+            let maxCalculatedU = -Infinity;
+            let minCalculatedV = Infinity;
+            let maxCalculatedV = -Infinity;
+
+            for (const px of primesX) {
+                for (const py of primesY) {
+                    const u = (px - py) / 2; // Normalized U for simpler axis scaling
+                    const v = (px + py) / 2; // Normalized V for simpler axis scaling
+
+                    uniqueUsSet.add(u);
+                    uniqueVsSet.add(v);
+
+                    if (u < minCalculatedU) minCalculatedU = u;
+                    if (u > maxCalculatedU) maxCalculatedU = u;
+                    if (v < minCalculatedV) minCalculatedV = v;
+                    if (v > maxCalculatedV) maxCalculatedV = v;
+                }
+            }
+
+            // Convert sets to sorted arrays for drawing
+            uniqueTransformedUs = Array.from(uniqueUsSet).sort((a, b) => a - b);
+            uniqueTransformedVs = Array.from(uniqueVsSet).sort((a, b) => a - b);
+
+            // If no points, set default min/max for axes to draw empty graph.
+            if (uniqueTransformedUs.length === 0) {
+                minCalculatedU = -10; // Default for empty range
+                maxCalculatedU = 10;
+            }
+            if (uniqueTransformedVs.length === 0) {
+                minCalculatedV = 0; // Default for empty range (can't be negative)
+                maxCalculatedV = 20;
+            }
+
+
+            // --- Draw Transformed (f, g) Graph ---
+            drawAxes(rotatedGraphCtx, rotatedGraphCanvas, minCalculatedU, maxCalculatedU, minCalculatedV, maxCalculatedV, 'F (1/√2 (i - j))', 'G (1/√2 (i + j))', uniqueTransformedUs, uniqueTransformedVs, true);
+
+            rotatedGraphCtx.fillStyle = '#ef4444'; // Shaded point color for transformed graph
+            const rotatedPointRadius = 3;
+
+            let transformedPointsDrawn = 0;
+            const rotatedGraphWidth = rotatedGraphCanvas.width - 2 * padding;
+            const rotatedGraphHeight = rotatedGraphCanvas.height - 2 * padding;
+
+            for (const px of primesX) {
+                for (const py of primesY) {
+                    // Calculate U and V coordinates (normalized for plotting)
+                    const u = (px - py) / 2;
+                    const v = (px + py) / 2;
+
+                    // Map U and V to canvas coordinates for the rotated graph
+                    const canvasU = padding + (u - minCalculatedU) / (maxCalculatedU - minCalculatedU) * rotatedGraphWidth;
+                    const canvasV = rotatedGraphCanvas.height - padding - (v - minCalculatedV) / (maxCalculatedV - minCalculatedV) * rotatedGraphHeight;
+
+                    rotatedGraphCtx.beginPath();
+                    rotatedGraphCtx.arc(canvasU, canvasV, rotatedPointRadius, 0, Math.PI * 2);
+                    rotatedGraphCtx.fill();
+                    transformedPointsDrawn++;
+                }
+            }
+
+            if (originalPointsDrawn > 0) {
+                showMessage(`Original graph drawn with ${originalPointsDrawn} prime pair${originalPointsDrawn === 1 ? '' : 's'}. Transformed graph drawn with ${transformedPointsDrawn} shaded point${transformedPointsDrawn === 1 ? '' : 's'}.`);
+            } else {
+                showMessage('No prime pairs found to plot in the specified range for either graph. Try increasing the max values.', 'info');
+            }
+        }
+
+        // --- Event Listeners ---
+        drawGraphBtn.addEventListener('click', drawGraphs);
+        clearGraphBtn.addEventListener('click', () => {
+            clearSpecificCanvas(primeGraphCtx, primeGraphCanvas);
+            clearSpecificCanvas(rotatedGraphCtx, rotatedGraphCanvas);
+            maxXInput.value = 100; // Reset to default
+            maxYInput.value = 100; // Reset to default
+            primesX = [];
+            primesY = [];
+            uniqueTransformedUs = [];
+            uniqueTransformedVs = [];
+            
+            // Redraw initial empty graphs with default axes
+            drawAxes(primeGraphCtx, primeGraphCanvas, 0, parseInt(maxXInput.value), 0, parseInt(maxYInput.value), 'X (Prime Number)', 'Y (Prime Number)', [], [], false);
+            const minUInitial = (2 - parseInt(maxYInput.value)) / 2;
+            const maxUInitial = (parseInt(maxXInput.value) - 2) / 2;
+            const minVInitial = 2;
+            const maxVInitial = (parseInt(maxXInput.value) + parseInt(maxYInput.value)) / 2;
+            drawAxes(rotatedGraphCtx, rotatedGraphCanvas, minUInitial, maxUInitial, minVInitial, maxVInitial, 'F (1/√2 (i - j))', 'G (1/√2 (i + j))', [], [], true);
+            
+            showMessage('Enter max values and click "Draw Graphs" to plot prime pairs.');
+        });
+
+        // Initial setup for both canvases
+        setCanvasSize(primeGraphCanvas);
+        setCanvasSize(rotatedGraphCanvas);
+
+        // Redraw if window resized and graphs were already drawn
+        window.addEventListener('resize', () => {
+            setCanvasSize(primeGraphCanvas);
+            setCanvasSize(rotatedGraphCanvas);
+            if (currentMaxX > 0 && currentMaxY > 0) {
+                drawGraphs(); // Redraw with current values
+            } else {
+                // If no graph was drawn, just clear and draw initial axes
+                clearSpecificCanvas(primeGraphCtx, primeGraphCanvas);
+                clearSpecificCanvas(rotatedGraphCtx, rotatedGraphCanvas);
+                drawAxes(primeGraphCtx, primeGraphCanvas, 0, parseInt(maxXInput.value), 0, parseInt(maxYInput.value), 'X (Prime Number)', 'Y (Prime Number)', [], [], false);
+                const minU = (2 - parseInt(maxYInput.value)) / 2;
+                const maxU = (parseInt(maxXInput.value) - 2) / 2;
+                const minV = 2;
+                const maxV = (parseInt(maxXInput.value) + parseInt(maxYInput.value)) / 2;
+                drawAxes(rotatedGraphCtx, rotatedGraphCanvas, minU, maxU, minV, maxV, 'F (1/√2 (i - j))', 'G (1/√2 (i + j))', [], [], true);
+            }
+            // Restore message if any
+            if (messageBox.style.display === 'block') {
+                // Message content is already there, just ensure it's visible.
+            }
+        });
+
+        // Draw initial empty graphs with axes
+        drawAxes(primeGraphCtx, primeGraphCanvas, 0, parseInt(maxXInput.value), 0, parseInt(maxYInput.value), 'X (Prime Number)', 'Y (Prime Number)', [], [], false);
+        const minUInitial = (2 - parseInt(maxYInput.value)) / 2;
+        const maxUInitial = (parseInt(maxXInput.value) - 2) / 2;
+        const minVInitial = 2;
+        const maxVInitial = (parseInt(maxXInput.value) + parseInt(maxYInput.value)) / 2;
+        drawAxes(rotatedGraphCtx, rotatedGraphCanvas, minUInitial, maxUInitial, minVInitial, maxVInitial, 'F (1/√2 (i - j))', 'G (1/√2 (i + j))', [], [], true);
+        showMessage('Enter max values and click "Draw Graphs" to plot prime pairs.');
+    </script>
+</body>
+</html>
