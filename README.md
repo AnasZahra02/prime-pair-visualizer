@@ -1,2 +1,4 @@
 # prime-pair-visualizer
-Prime pairs are drawn in the cartesian plane. A new set of axes that are the rotation of the original axes through 45 degrees is plotted adjacent to it. Points on the new axes that would map to a prime pair when transformed back are then plotted.
+Prime pairs are drawn on a classic graph on the left. 
+The axes of the graph to the right are the result of a rotation of -45 degrees relative to the classic graph axes.
+Points are drawn on this graph that have the property that they map to a prime pair when transformed to the classic graph.
